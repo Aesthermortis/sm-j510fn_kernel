@@ -83,3 +83,4 @@ obj-$(CONFIG_TIMA_LOG)		+= tima_debug_log.o
 endif
 obj-$(CONFIG_TZDEV)		+= tzdev/
 obj-$(CONFIG_SENSORS_BHI)       += bhy/
+obj-$(CONFIG_MOT_UTAG) += utag/
