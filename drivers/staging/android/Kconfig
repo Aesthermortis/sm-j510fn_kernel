@@ -110,6 +110,14 @@ config SEC_DEBUG_LMK_COUNT_INFO
 	help
 	  Show LMK execution count information when lmk invoked
 
+config ANDROID_LMK_ADJ_RBTREE
+	bool "Android Low Memory Killer: Red-Black Tree search"
+	depends on ANDROID_LOW_MEMORY_KILLER
+	default y
+	---help---
+	  Utilize RB Tree for walking the tasklist.. O(log n) vs O(n)
+	  much speedier for long task list!
+
 config ANDROID_INTF_ALARM_DEV
 	bool "Android alarm driver"
 	depends on RTC_CLASS
