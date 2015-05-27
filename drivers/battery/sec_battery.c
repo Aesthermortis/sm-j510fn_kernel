@@ -5929,6 +5929,7 @@ static int sec_battery_probe(struct platform_device *pdev)
 
 	dev_info(battery->dev,
 		"%s: SEC Battery Driver Loaded\n", __func__);
+
 #ifdef CONFIG_SAMSUNG_BATTERY_FACTORY
 	/* do not sleep in lpm mode & factory mode */
 	if (sec_bat_is_lpm(battery)) {
@@ -5937,6 +5938,9 @@ static int sec_battery_probe(struct platform_device *pdev)
 		wake_lock(&battery->lpm_wake_lock);
 	}
 #endif
+
+	charger_control_init(battery);
+
 	return 0;
 
 
