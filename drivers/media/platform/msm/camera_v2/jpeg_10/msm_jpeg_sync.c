@@ -182,14 +182,14 @@ static inline int msm_jpeg_q_wait(struct msm_jpeg_q *q_p)
 	return rc;
 }
 
-inline int msm_jpeg_q_wakeup(struct msm_jpeg_q *q_p)
+static inline int msm_jpeg_q_wakeup(struct msm_jpeg_q *q_p)
 {
 	JPEG_DBG("%s:%d] %s\n", __func__, __LINE__, q_p->name);
 	wake_up(&q_p->wait);
 	return 0;
 }
 
-inline int msm_jpeg_q_unblock(struct msm_jpeg_q *q_p)
+static inline int msm_jpeg_q_unblock(struct msm_jpeg_q *q_p)
 {
 	JPEG_DBG("%s:%d] %s\n", __func__, __LINE__, q_p->name);
 	q_p->unblck = 1;
@@ -197,7 +197,7 @@ inline int msm_jpeg_q_unblock(struct msm_jpeg_q *q_p)
 	return 0;
 }
 
-inline void msm_jpeg_outbuf_q_cleanup(struct msm_jpeg_device *pgmn_dev,
+static inline void msm_jpeg_outbuf_q_cleanup(struct msm_jpeg_device *pgmn_dev,
 	struct msm_jpeg_q *q_p, int domain_num)
 {
 	struct msm_jpeg_core_buf *buf_p;
