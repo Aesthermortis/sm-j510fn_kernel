@@ -22,6 +22,7 @@
 #include <linux/qpnp/pwm.h>
 #include <linux/err.h>
 
+#include <linux/display_state.h>
 #include "mdss_dsi.h"
 
 #if defined(CONFIG_FB_MSM_MDSS_SAMSUNG)
@@ -42,6 +43,13 @@
 #define DEFAULT_MDP_TRANSFER_TIME 14000
 
 DEFINE_LED_TRIGGER(bl_led_trigger);
+
+bool display_on = true;
+
+bool is_display_on()
+{
+	return display_on;
+}
 
 void mdss_dsi_panel_pwm_cfg(struct mdss_dsi_ctrl_pdata *ctrl)
 {
@@ -716,6 +724,8 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 	struct samsung_display_driver_data *vdd = NULL;
 #endif
 
+	display_on = true;
+
 	if (pdata == NULL) {
 		pr_err("%s: Invalid input data\n", __func__);
 		return -EINVAL;
@@ -837,6 +847,8 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 	mutex_unlock(&vdd->vdd_lock);
 	mdss_samsung_panel_off_post(pdata);
 #endif
+
+        display_on = false;
 
 end:
 	pr_info("%s:-\n", __func__);
