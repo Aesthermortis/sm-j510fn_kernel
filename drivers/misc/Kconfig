@@ -412,7 +412,7 @@ config DYNAMIC_MICBIAS_CONTROL
 	 micbias set to low voltage.
 
 config TIMA_LOG
-	tristate "Support for dumping TIMA log"
+	bool "Support for dumping TIMA log"
 	default y
 	help
 	  This option enables support for dumping TIMA log
