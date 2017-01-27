@@ -868,7 +868,7 @@ out:
 	if (console_null_state)
 		BUG();
 #else
-	printk_sched("%s", buf);
+	printk_deferred("%s", buf);
 #endif
 }
 
