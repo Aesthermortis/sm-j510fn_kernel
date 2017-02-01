@@ -80,7 +80,7 @@
  VOS_STATUS hdd_enter_standby(hdd_context_t *pHddCtx);
  VOS_STATUS hdd_enter_deep_sleep(hdd_context_t *pHddCtx, 
                                 hdd_adapter_t* pAdapter);
-#ifdef CONFIG_HAS_EARLYSUSPEND
+#ifdef CONFIG_POWERSUSPEND
  VOS_STATUS hdd_wlan_reset(void);
  VOS_STATUS hdd_wlan_reset_initialization(void) ;
 #endif
