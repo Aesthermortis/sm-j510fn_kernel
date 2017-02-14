@@ -41,6 +41,16 @@
 
 #include "internal.h"
 
+#ifdef CONFIG_DYNAMIC_PAGE_WRITEBACK
+#include <linux/powersuspend.h>
+#endif
+#ifdef CONFIG_ADAPTIVE_DIRTY_BACKGROUND_RATIO
+#include <linux/powersuspend.h>
+#endif
+#ifdef CONFIG_ADAPTIVE_VM_DIRTY_RATIO
+#include <linux/powersuspend.h>
+#endif
+
 /*
  * Sleep at most 200ms at a time in balance_dirty_pages().
  */
@@ -70,7 +80,14 @@ static long ratelimit_pages = 32;
 /*
  * Start background writeback (via writeback threads) at this percentage
  */
+#ifdef CONFIG_ADAPTIVE_DIRTY_BACKGROUND_RATIO
+#define DEFAULT_DIRTY_BACKGROUND_RATIO 20
+int dirty_background_ratio, resume_dirty_background_ratio;
+#define DEFAULT_DIRTY_SUSPEND_BACKGROUND_RATIO 60
+int dirty_suspend_background_ratio, suspend_dirty_background_ratio;
+#else
 int dirty_background_ratio = 0;
+#endif
 
 /*
  * dirty_background_bytes starts at 0 (disabled) so that it is a function of
@@ -87,7 +104,14 @@ int vm_highmem_is_dirtyable;
 /*
  * The generator of dirty data starts writeback at this percentage
  */
+#ifdef CONFIG_ADAPTIVE_VM_DIRTY_RATIO
+#define DEFAULT_VM_DIRTY_RATIO 40
+int vm_dirty_ratio, resume_vm_dirty_ratio;
+#define DEFAULT_VM_SUSPEND_DIRTY_RATIO 95
+int vm_suspend_dirty_ratio, suspend_vm_dirty_ratio;
+#else
 int vm_dirty_ratio = 0;
+#endif
 
 /*
  * vm_dirty_bytes starts at 0 (disabled) so that it is a function of
@@ -96,16 +120,54 @@ int vm_dirty_ratio = 0;
 unsigned long vm_dirty_bytes = 40 * 1024 * 1024;
 
 /*
+ * The default intervals between `kupdate'-style writebacks
+ */
+#ifdef CONFIG_DYNAMIC_PAGE_WRITEBACK
+#define DEFAULT_DIRTY_WRITEBACK_INTERVAL	 5 * 100 /* centiseconds */
+#define HIGH_DIRTY_WRITEBACK_INTERVAL		15 * 100 /* centiseconds */
+
+/*
  * The interval between `kupdate'-style writebacks
  */
+unsigned int dirty_writeback_interval = DEFAULT_DIRTY_WRITEBACK_INTERVAL; /* centiseconds */
+#else
 unsigned int dirty_writeback_interval = 5 * 100; /* centiseconds */
-
+#endif
 EXPORT_SYMBOL_GPL(dirty_writeback_interval);
+
+#ifdef CONFIG_DYNAMIC_PAGE_WRITEBACK
+/*
+ * The dynamic writeback activation status
+ */
+int dyn_dirty_writeback_enabled = 1;
+EXPORT_SYMBOL_GPL(dyn_dirty_writeback_enabled);
+
+/*
+ * The interval between `kupdate'-style writebacks when the system is active
+ */
+unsigned int dirty_writeback_active_interval = HIGH_DIRTY_WRITEBACK_INTERVAL; /* centiseconds */
+EXPORT_SYMBOL_GPL(dirty_writeback_active_interval);
+
+/*
+ * The interval between `kupdate'-style writebacks when the system is suspended
+ */
+unsigned int dirty_writeback_suspend_interval = DEFAULT_DIRTY_WRITEBACK_INTERVAL; /* centiseconds */
+EXPORT_SYMBOL_GPL(dirty_writeback_suspend_interval);
+#endif
 
 /*
  * The longest time for which data is allowed to remain dirty
  */
+#ifdef CONFIG_DYNAMIC_PAGE_WRITEBACK
+#define DEFAULT_DIRTY_EXPIRE_INTERVAL 2000 /* centiseconds */
+#define DEFAULT_SUSPEND_DIRTY_EXPIRE_INTERVAL 12000 /* centiseconds */
+unsigned int dirty_expire_interval,
+	resume_dirty_expire_interval;
+unsigned int sleep_dirty_expire_interval,
+	suspend_dirty_expire_interval;
+#else
 unsigned int dirty_expire_interval = 30 * 100; /* centiseconds */
+#endif
 
 /*
  * Flag that makes the machine dump writes/reads and block dirtyings.
@@ -1565,6 +1627,65 @@ int dirty_writeback_centisecs_handler(ctl_table *table, int write,
 	return 0;
 }
 
+#ifdef CONFIG_DYNAMIC_PAGE_WRITEBACK
+/*
+ * Manages the dirty page writebacks activation status
+ */
+static void set_dirty_writeback_status(bool active) {
+	/* Change the current dirty writeback interval according to the
+	 * status provided */
+	dirty_writeback_interval = (active) ?
+				dirty_writeback_active_interval :
+				dirty_writeback_suspend_interval;
+
+	/* Print debug info */
+	pr_debug("%s: Set dirty_writeback_interval = %d centisecs\n",
+				__func__, dirty_writeback_interval);
+}
+
+/*
+ * sysctl handler for /proc/sys/vm/dyn_dirty_writeback_enabled
+ */
+int dynamic_dirty_writeback_handler(struct ctl_table *table, int write,
+	void __user *buffer, size_t *lenp, loff_t *ppos)
+{
+	int ret;
+	int old_status = dyn_dirty_writeback_enabled;
+
+	/* Get and store the new status */
+	ret = proc_dointvec_minmax(table, write, buffer, lenp, ppos);
+
+	/* If the dynamic writeback has been enabled then set the active
+	 * dirty writebacks interval, otherwise if the feature has been
+	 * disabled, set the suspend interval (the default interval)
+	 * to restore the standard functionality */
+	if (ret == 0 && write && dyn_dirty_writeback_enabled != old_status)
+		set_dirty_writeback_status(!!dyn_dirty_writeback_enabled);
+
+	return ret;
+}
+
+/*
+ * sysctl handler for /proc/sys/vm/dirty_writeback_active_centisecs
+ */
+int dirty_writeback_active_centisecs_handler(ctl_table *table, int write,
+	void __user *buffer, size_t *length, loff_t *ppos)
+{
+	proc_dointvec_minmax(table, write, buffer, length, ppos);
+	return 0;
+}
+
+/*
+ * sysctl handler for /proc/sys/vm/dirty_writeback_suspend_centisecs
+ */
+int dirty_writeback_suspend_centisecs_handler(ctl_table *table, int write,
+	void __user *buffer, size_t *length, loff_t *ppos)
+{
+	proc_dointvec_minmax(table, write, buffer, length, ppos);
+	return 0;
+}
+#endif
+
 #ifdef CONFIG_BLOCK
 void laptop_mode_timer_fn(unsigned long data)
 {
@@ -1651,6 +1772,101 @@ static struct notifier_block __cpuinitdata ratelimit_nb = {
 	.next		= NULL,
 };
 
+#ifdef CONFIG_ADAPTIVE_DIRTY_BACKGROUND_RATIO
+static void dbackground_power_suspend(struct power_suspend *handler)
+{
+	if (dirty_suspend_background_ratio != resume_dirty_background_ratio)
+		resume_dirty_background_ratio = dirty_suspend_background_ratio;
+
+	dirty_suspend_background_ratio = suspend_dirty_background_ratio;
+}
+
+static void dbackground_power_resume(struct power_suspend *handler)
+{
+	if (dirty_suspend_background_ratio != suspend_dirty_background_ratio)
+		suspend_dirty_background_ratio = dirty_suspend_background_ratio;
+
+	dirty_suspend_background_ratio = resume_dirty_background_ratio;
+}
+
+static struct power_suspend dbackground_suspend = {
+	.suspend = dbackground_power_suspend,
+	.resume = dbackground_power_resume,
+};
+#endif
+
+#ifdef CONFIG_ADAPTIVE_VM_DIRTY_RATIO
+static void dratio_power_suspend(struct power_suspend *handler)
+{
+	if (vm_suspend_dirty_ratio != resume_vm_dirty_ratio)
+		resume_vm_dirty_ratio = vm_suspend_dirty_ratio;
+
+	vm_suspend_dirty_ratio = suspend_vm_dirty_ratio;
+}
+
+static void dratio_power_resume(struct power_suspend *handler)
+{
+	if (vm_suspend_dirty_ratio != suspend_vm_dirty_ratio)
+		suspend_vm_dirty_ratio = vm_suspend_dirty_ratio;
+
+	vm_suspend_dirty_ratio = resume_vm_dirty_ratio;
+}
+
+static struct power_suspend dratio_suspend = {
+	.suspend = dratio_power_suspend,
+	.resume = dratio_power_resume,
+};
+#endif
+
+#ifdef CONFIG_DYNAMIC_PAGE_WRITEBACK
+/*
+ * Sets the dirty page writebacks interval for suspended system
+ */
+static void dirty_writeback_power_suspend(struct power_suspend *handler)
+{
+	if (dyn_dirty_writeback_enabled)
+		set_dirty_writeback_status(false);
+}
+
+/*
+ * Sets the dirty page writebacks interval for active system
+ */
+static void dirty_writeback_power_resume(struct power_suspend *handler)
+{
+	if (dyn_dirty_writeback_enabled)
+		set_dirty_writeback_status(true);
+}
+
+/*
+ * Struct for the dirty page writeback management during suspend/resume
+ */
+static struct power_suspend dirty_writeback_suspend = {
+	.suspend = dirty_writeback_power_suspend,
+	.resume = dirty_writeback_power_resume,
+};
+
+static void dirty_power_suspend(struct power_suspend *handler)
+{
+	if (dirty_expire_interval != resume_dirty_expire_interval)
+		resume_dirty_expire_interval = dirty_expire_interval;
+
+	dirty_expire_interval = suspend_dirty_expire_interval;
+}
+
+static void dirty_power_resume(struct power_suspend *handler)
+{
+	if (dirty_expire_interval != suspend_dirty_expire_interval)
+		suspend_dirty_expire_interval = dirty_expire_interval;
+
+	dirty_expire_interval = resume_dirty_expire_interval;
+}
+
+static struct power_suspend dirty_suspend = {
+	.suspend = dirty_power_suspend,
+	.resume = dirty_power_resume,
+};
+#endif
+
 /*
  * Called early on to tune the page writeback dirty limits.
  *
@@ -1671,6 +1887,37 @@ static struct notifier_block __cpuinitdata ratelimit_nb = {
  */
 void __init page_writeback_init(void)
 {
+
+#ifdef CONFIG_ADAPTIVE_DIRTY_BACKGROUND_RATIO
+	dirty_background_ratio = resume_dirty_background_ratio =
+		DEFAULT_DIRTY_BACKGROUND_RATIO;
+	dirty_suspend_background_ratio = suspend_dirty_background_ratio =
+		DEFAULT_DIRTY_SUSPEND_BACKGROUND_RATIO;
+
+	register_power_suspend(&dbackground_suspend);
+#endif
+
+#ifdef CONFIG_ADAPTIVE_VM_DIRTY_RATIO
+	vm_dirty_ratio = resume_vm_dirty_ratio =
+		DEFAULT_VM_DIRTY_RATIO;
+	vm_suspend_dirty_ratio = suspend_vm_dirty_ratio =
+		DEFAULT_VM_SUSPEND_DIRTY_RATIO;
+
+	register_power_suspend(&dratio_suspend);
+#endif
+
+#ifdef CONFIG_DYNAMIC_PAGE_WRITEBACK
+	dirty_expire_interval = resume_dirty_expire_interval =
+		DEFAULT_DIRTY_EXPIRE_INTERVAL;
+	sleep_dirty_expire_interval = suspend_dirty_expire_interval =
+		DEFAULT_SUSPEND_DIRTY_EXPIRE_INTERVAL;
+
+	register_power_suspend(&dirty_suspend);
+
+	/* Register the dirty page writeback management during suspend/resume */
+	register_power_suspend(&dirty_writeback_suspend);
+#endif
+
 	writeback_set_ratelimit();
 	register_cpu_notifier(&ratelimit_nb);
 
