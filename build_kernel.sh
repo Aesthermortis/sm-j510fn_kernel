@@ -2,7 +2,7 @@
 
 zip_name="cherry";
 export ARCH=arm;
-export CROSS_COMPILE=$(pwd)/../gcc/linaro/arm-eabi-4.9/bin/arm-eabi-;
+export CROSS_COMPILE=$(pwd)/../linaro/arm-eabi-6.3.1/bin/arm-eabi-;
 #git clean -d -x -f && ccache -C -z
 if ! [ -d "out" ]; then
 mkdir out;
