@@ -19,6 +19,10 @@ while true; do
     esac
 done
 
+echo "Get rid of the .orig and .rej files";
+find .  -name '*.orig' -exec rm -f {} ';'
+find .  -name '*.rej' -exec rm -f {} ';'
+
 make -C $(pwd) O=out msm8916_sec_defconfig VARIANT_DEFCONFIG=msm8916_sec_j5xlte_eur_defconfig SELINUX_DEFCONFIG=selinux_defconfig;
 make -j4 -C $(pwd) O=out;
 
