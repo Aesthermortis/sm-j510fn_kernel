@@ -1,8 +1,12 @@
 #!/bin/bash
 
 zip_name="cherry";
+DATETIME=`date +%D%H%M | sed 's-/--g'`;
+zarch=""$zip_name"_"$DATETIME"";
+
 export ARCH=arm;
 export CROSS_COMPILE=$(pwd)/../linaro/arm-eabi-6.3.1/bin/arm-eabi-;
+
 #git clean -d -x -f && ccache -C -z
 if ! [ -d "out" ]; then
 mkdir out;
@@ -37,4 +41,5 @@ find . -name '*ko' -exec cp '{}' ~/cherry/modules/ \;
  
 cd ~/cherry
 
-zip -r $zip_name ./
+zip -r $zarch ./
+mv $zarch.zip ~/

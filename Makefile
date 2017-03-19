@@ -197,7 +197,6 @@ export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?=arm
 CROSS_COMPILE	?=$(CCACHE) ../linaro/arm-eabi-6.3.1/bin/arm-eabi-
 
-
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
 SRCARCH 	:= $(ARCH)
@@ -349,25 +348,25 @@ include $(srctree)/scripts/Kbuild.include
 
 # Make variables (CC, etc...)
 
-AS		        = $(CROSS_COMPILE)as
-LD		        = $(CROSS_COMPILE)ld.bfd
-CC		        = $(CCACHE) $(CROSS_COMPILE)gcc
-CPP		        = $(CC) -E
+AS		= $(CROSS_COMPILE)as
+LD		= $(CROSS_COMPILE)ld.bfd
+CC		= $(CCACHE) $(CROSS_COMPILE)gcc
+CPP		= $(CC) -E
 ifdef CONFIG_CC_GRAPHITE_OPTIMIZATION
-CC		       += $(GRAPHITE)
-CPP		       += $(GRAPHITE)
+CC		+= $(GRAPHITE)
+CPP		+= $(GRAPHITE)
 endif
-AR		        = $(CROSS_COMPILE)ar
-NM		        = $(CROSS_COMPILE)nm
-STRIP		    = $(CROSS_COMPILE)strip
-OBJCOPY		    = $(CROSS_COMPILE)objcopy
-OBJDUMP		    = $(CROSS_COMPILE)objdump
-AWK		        = awk
-GENKSYMS	    = scripts/genksyms/genksyms
+AR		= $(CROSS_COMPILE)ar
+NM		= $(CROSS_COMPILE)nm
+STRIP		= $(CROSS_COMPILE)strip
+OBJCOPY		= $(CROSS_COMPILE)objcopy
+OBJDUMP		= $(CROSS_COMPILE)objdump
+AWK		= awk
+GENKSYMS	= scripts/genksyms/genksyms
 INSTALLKERNEL  := installkernel
-DEPMOD		    = /sbin/depmod
-PERL		    = perl
-CHECK		    = sparse
+DEPMOD		= /sbin/depmod
+PERL		= perl
+CHECK		= sparse
 
 # Use the wrapper for the compiler.  This wrapper scans for new
 # warnings and causes the build to stop upon encountering them.
@@ -383,7 +382,7 @@ ifdef CONFIG_CC_GRAPHITE_OPTIMIZATION
 CFLAGS_KERNEL	= $(GRAPHITE)
 endif
 AFLAGS_KERNEL	=
-CFLAGS_GCOV	    = -fprofile-arcs -ftest-coverage
+CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
 # Use USERINCLUDE when you must reference the UAPI directories only.
@@ -409,9 +408,9 @@ KBUILD_CPPFLAGS := -D__KERNEL__
 CFLAGS_A53       = -mtune=cortex-a53 -mfpu=neon-vfpv4 -march=armv8-a+crc -funsafe-math-optimizations
 
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
- 		   -fno-strict-aliasing -fno-common \
- 		   -Werror-implicit-function-declaration \
- 		   -Wno-format-security \
+		   -fno-strict-aliasing -fno-common \
+		   -Werror-implicit-function-declaration \
+		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
 		   -Wno-unused-variable -Wno-bool-compare -Wno-discarded-array-qualifiers -Wno-logical-not-parentheses -Wno-tautological-compare \
 		   -fmodulo-sched -fmodulo-sched-allow-regmoves \
@@ -422,9 +421,9 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 #           -fno-ipa-icf
 #		    -fgnu89-inline
 
-KBUILD_AFLAGS_KERNEL  :=
-KBUILD_CFLAGS_KERNEL  :=
-KBUILD_AFLAGS         := -D__ASSEMBLY__
+KBUILD_AFLAGS_KERNEL :=
+KBUILD_CFLAGS_KERNEL :=
+KBUILD_AFLAGS   := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE
 KBUILD_CFLAGS_MODULE  := -DMODULE
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
