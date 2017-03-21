@@ -1301,7 +1301,7 @@ static void bprm_fill_uid(struct linux_binprm *bprm)
 
 	/* We ignore suid/sgid if there are no mappings for them in the ns */
 	if (!kuid_has_mapping(bprm->cred->user_ns, uid) ||
-			!kgid_has_mapping(bprm->cred->user_ns, gid))
+		 !kgid_has_mapping(bprm->cred->user_ns, gid))
 		return;
 
 	if (mode & S_ISUID) {
@@ -1329,6 +1329,7 @@ int prepare_binprm(struct linux_binprm *bprm)
 		return -EACCES;
 
 	bprm_fill_uid(bprm);
+
 	/* fill in binprm security blob */
 	retval = security_bprm_set_creds(bprm);
 	if (retval)
