@@ -1225,6 +1225,9 @@ struct task_struct {
 #endif
 #ifdef CONFIG_CGROUP_SCHED
 	struct task_group *sched_task_group;
+#ifdef CONFIG_CAPACITY_CLAMPING
+	struct rb_node cap_clamp_node[2];
+#endif
 #endif
 
 #ifdef CONFIG_PREEMPT_NOTIFIERS
