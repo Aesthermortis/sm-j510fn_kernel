@@ -983,6 +983,23 @@ menuconfig CGROUP_SCHED
 	  bandwidth allocation to such task groups. It uses cgroups to group
 	  tasks.
 
+config CAPACITY_CLAMPING
+	bool "Capacity clamping per group of tasks"
+	depends on CPU_FREQ_GOV_SCHEDUTIL
+	depends on CGROUP_SCHED
+	default n
+	help
+	  This feature allows the scheduler to enforce maximum and minimum
+	  capacity on each CPU based on RUNNABLE tasks currently scheduled
+	  on that CPU.
+	  Minimum capacity can be used for example to "boost" the performance
+	  of important tasks by running them on an OPP which can be higher than
+	  the minimum one eventually selected by the schedutil governor.
+	  Maximum capacity can be used for example to "restrict" the maximum
+	  OPP which can be requested by background tasks.
+
+	  If in doubt, say N.
+
 if CGROUP_SCHED
 config FAIR_GROUP_SCHED
 	bool "Group scheduling for SCHED_OTHER"

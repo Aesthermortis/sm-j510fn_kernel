@@ -150,6 +150,14 @@ struct task_group {
 	atomic_t runnable_avg;
 #endif
 
+#ifdef CONFIG_CAPACITY_CLAMPING
+#define CAP_CLAMP_MIN 0
+#define CAP_CLAMP_MAX 1
+
+	/* Min and Max capacity constraints for tasks in this group */
+	unsigned int cap_clamp[2];
+#endif
+
 #ifdef CONFIG_RT_GROUP_SCHED
 	struct sched_rt_entity **rt_se;
 	struct rt_rq **rt_rq;

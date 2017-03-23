@@ -9190,6 +9190,11 @@ void __init sched_init(void)
 
 #endif /* CONFIG_CGROUP_SCHED */
 
+#ifdef CONFIG_CAPACITY_CLAMPING
+	root_task_group.cap_clamp[CAP_CLAMP_MIN] = 0;
+	root_task_group.cap_clamp[CAP_CLAMP_MAX] = SCHED_CAPACITY_SCALE;
+#endif /* CONFIG_CAPACITY_CLAMPING */
+
 	for_each_possible_cpu(i) {
 		struct rq *rq;
 
@@ -9520,6 +9525,11 @@ struct task_group *sched_create_group(struct task_group *parent)
 
 	if (!alloc_rt_sched_group(tg, parent))
 		goto err;
+
+#ifdef CONFIG_CAPACITY_CLAMPING
+	tg->cap_clamp[CAP_CLAMP_MIN] = parent->cap_clamp[CAP_CLAMP_MIN];
+	tg->cap_clamp[CAP_CLAMP_MAX] = parent->cap_clamp[CAP_CLAMP_MAX];
+#endif
 
 	return tg;
 
@@ -10044,6 +10054,129 @@ static int cpu_notify_on_migrate_write_u64(struct cgroup *cgrp,
 	return 0;
 }
 
+#ifdef CONFIG_CAPACITY_CLAMPING
+
+static DEFINE_MUTEX(cap_clamp_mutex);
+
+static int cpu_capacity_min_write_u64(struct cgroup_subsys_state *css,
+				      struct cftype *cftype, u64 value)
+{
+	struct cgroup_subsys_state *pos;
+	unsigned int min_value;
+	struct task_group *tg;
+	int ret = -EINVAL;
+
+	min_value = min_t(unsigned int, value, SCHED_CAPACITY_SCALE);
+
+	mutex_lock(&cap_clamp_mutex);
+	rcu_read_lock();
+
+	tg = css_tg(css);
+
+	/* Already at the required value */
+	if (tg->cap_clamp[CAP_CLAMP_MIN] == min_value)
+		goto done;
+
+	/* Ensure to not exceed the maximum capacity */
+	if (tg->cap_clamp[CAP_CLAMP_MAX] < min_value)
+		goto out;
+
+	/* Ensure min cap fits within parent constraint */
+	if (tg->parent &&
+	    tg->parent->cap_clamp[CAP_CLAMP_MIN] > min_value)
+		goto out;
+
+	/* Each child must be a subset of us */
+	css_for_each_child(pos, css) {
+		if (css_tg(pos)->cap_clamp[CAP_CLAMP_MIN] < min_value)
+			goto out;
+	}
+
+	tg->cap_clamp[CAP_CLAMP_MIN] = min_value;
+
+done:
+	ret = 0;
+out:
+	rcu_read_unlock();
+	mutex_unlock(&cap_clamp_mutex);
+
+	return ret;
+}
+
+static int cpu_capacity_max_write_u64(struct cgroup_subsys_state *css,
+				      struct cftype *cftype, u64 value)
+{
+	struct cgroup_subsys_state *pos;
+	unsigned int max_value;
+	struct task_group *tg;
+	int ret = -EINVAL;
+
+	max_value = min_t(unsigned int, value, SCHED_CAPACITY_SCALE);
+
+	mutex_lock(&cap_clamp_mutex);
+	rcu_read_lock();
+
+	tg = css_tg(css);
+
+	/* Already at the required value */
+	if (tg->cap_clamp[CAP_CLAMP_MAX] == max_value)
+		goto done;
+
+	/* Ensure to not go below the minimum capacity */
+	if (tg->cap_clamp[CAP_CLAMP_MIN] > max_value)
+		goto out;
+
+	/* Ensure max cap fits within parent constraint */
+	if (tg->parent &&
+	    tg->parent->cap_clamp[CAP_CLAMP_MAX] < max_value)
+		goto out;
+
+	/* Each child must be a subset of us */
+	css_for_each_child(pos, css) {
+		if (css_tg(pos)->cap_clamp[CAP_CLAMP_MAX] > max_value)
+			goto out;
+	}
+
+	tg->cap_clamp[CAP_CLAMP_MAX] = max_value;
+
+done:
+	ret = 0;
+out:
+	rcu_read_unlock();
+	mutex_unlock(&cap_clamp_mutex);
+
+	return ret;
+}
+
+static u64 cpu_capacity_min_read_u64(struct cgroup_subsys_state *css,
+				     struct cftype *cft)
+{
+	struct task_group *tg;
+	u64 min_capacity;
+
+	rcu_read_lock();
+	tg = css_tg(css);
+	min_capacity = tg->cap_clamp[CAP_CLAMP_MIN];
+	rcu_read_unlock();
+
+	return min_capacity;
+}
+
+static u64 cpu_capacity_max_read_u64(struct cgroup_subsys_state *css,
+				     struct cftype *cft)
+{
+	struct task_group *tg;
+	u64 max_capacity;
+
+	rcu_read_lock();
+	tg = css_tg(css);
+	max_capacity = tg->cap_clamp[CAP_CLAMP_MAX];
+	rcu_read_unlock();
+
+	return max_capacity;
+}
+#endif /* CONFIG_CAPACITY_CLAMPING */
+
 #ifdef CONFIG_FAIR_GROUP_SCHED
 static int cpu_shares_write_u64(struct cgroup *cgrp, struct cftype *cftype,
 				u64 shareval)
@@ -10332,6 +10465,18 @@ static struct cftype cpu_files[] = {
 		.name = "shares",
 		.read_u64 = cpu_shares_read_u64,
 		.write_u64 = cpu_shares_write_u64,
+	},
+#endif
+#ifdef CONFIG_CAPACITY_CLAMPING
+	{
+		.name = "capacity_min",
+		.read_u64 = cpu_capacity_min_read_u64,
+		.write_u64 = cpu_capacity_min_write_u64,
+	},
+	{
+		.name = "capacity_max",
+		.read_u64 = cpu_capacity_max_read_u64,
+		.write_u64 = cpu_capacity_max_write_u64,
 	},
 #endif
 #ifdef CONFIG_CFS_BANDWIDTH
