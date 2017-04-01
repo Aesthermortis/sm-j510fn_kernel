@@ -596,6 +596,19 @@ config MACH_J3LTE_CHN_CTC
 	help
 	  Support for Samsung J3LTE CHN CTC device.
 
+config MACH_J3LTE_CHN_TW
+	depends on SEC_J3_PROJECT
+	default n
+	bool "Samsung J3LTE CHN TW"
+	help
+	  Support for Samsung J3LTE CHN TW device.
+
+config MACH_J3LTE_SEA_XTC
+	depends on SEC_J3_PROJECT
+	default n
+	bool "Samsung J3LTE SEA XTC"
+	help
+	  Support for Samsung J3LTE SEA XTC device.
 
 config MACH_J3LTE_USA_SPR
 	depends on SEC_J3_PROJECT
@@ -646,6 +659,13 @@ config SEC_J5X_PROJECT
 	help
 	  Support for Samsung J5X Project
 
+config MACH_J5XLTE_CHN_CMCC
+	depends on SEC_J5X_PROJECT
+	default n
+	bool "Samsung J5XLTE CHN CMCC"
+	help
+	  Support for Samsung J5XLTE CHN CMCC device.
+
 config MACH_J5XLTE_EUR_OPEN
 	depends on SEC_J5X_PROJECT
 	default n
@@ -659,7 +679,14 @@ config MACH_J5XLTE_KOR_OPEN
 	bool "Samsung J5XLTE KOR OPEN"
 	help
 	  Support for Samsung J5XLTE KOR OPEN device.
-	  
+
+config MACH_J5X3G_MEA_JV
+	depends on SEC_J5X_PROJECT
+	default n
+	bool "Samsung J5X3G MEA JV"
+	help
+	  Support for Samsung J5X3G MEA JV device.
+
 config SEC_J5_PROJECT
 	depends on ARCH_MSM8916
 	default n
@@ -673,13 +700,6 @@ config MACH_J5LTE_EUR_OPEN
 	bool "Samsung J5LTE EUR OPEN"
 	help
 	  Support for Samsung J5LTE EUR OPEN device.
-
-config MACH_J5X3G_MEA_JV
-	depends on SEC_J5X_PROJECT
-	default n
-	bool "Samsung J5X3G MEA JV"
-	help
-	  Support for Samsung J5X3G MEA JV device.
 
 config SEC_J1_PROJECT
 	depends on ARCH_MSM8916
@@ -1038,6 +1058,20 @@ config MACH_MATISSEVEWIFI_EUR_OPEN
         bool "Samsung MATISSEVE WIFI EUR Open"
         help
           Support for Samsung MATISSEVE WIFI EUR Open device.
+
+config SEC_GOYAIRIS_PROJECT
+    depends on ARCH_MSM8916
+        default n
+        bool "Samsung GOYAIRIS Project"
+        help
+          Support for Samsung GOYAIRIS Project
+
+config MACH_GOYAIRIS3G_SWA_OPEN
+    depends on SEC_GOYAIRIS_PROJECT
+        default n
+        bool "Samsung GOYAIRIS 3G SWA OPEN"
+        help
+          Support for Samsung GOYAIRIS 3G SWA OPEN device.
 
 config MSM_KRAIT_TBB_ABORT_HANDLER
 	bool "Krait TBB/TBH data abort handler"

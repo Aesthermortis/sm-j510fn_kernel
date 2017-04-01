@@ -43,6 +43,7 @@ ifeq ($(CONFIG_ARCH_MSM8929),y)
 
 ifeq ($(CONFIG_MACH_J7_USA_SPR),y)
 	dtb-y += msm8929-sec-j7-spr-r00.dtb
+	dtb-y += msm8929-sec-j7-spr-r01.dtb
 endif
 
 endif
