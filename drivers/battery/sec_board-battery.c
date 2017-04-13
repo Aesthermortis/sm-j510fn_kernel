@@ -59,7 +59,7 @@ int current_cable_type = POWER_SUPPLY_TYPE_BATTERY;
 #else
 extern int current_cable_type;
 #endif
-extern int system_rev;
+//extern int system_rev;
 extern bool is_cable_attached;
 static struct qpnp_vadc_chip *adc_client;
 
