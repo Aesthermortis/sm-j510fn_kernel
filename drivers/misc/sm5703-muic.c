@@ -55,7 +55,7 @@
 extern int spmi_ext_register_writel_extra(u8 sid, u16 ad, u8 *buf, int len);
 extern int spmi_ext_register_readl_extra(u8 sid, u16 ad, u8 *buf, int len);
 
-extern int system_rev;
+//extern int system_rev;
 
 #define INT_MASK1                   0x5C
 #define INT_MASK2                   0x00
