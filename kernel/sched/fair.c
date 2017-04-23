@@ -4848,17 +4848,17 @@ select_task_rq_fair(struct task_struct *p, int sd_flag, int wake_flags)
 
 	if (sched_orig_load_balance_enable){
 		//8916 chipset goes to legacy load balancer code
-		if (sd_flag & SD_BALANCE_WAKE) {
-			if (cpumask_test_cpu(cpu, tsk_cpus_allowed(p)))
-				want_affine = 1;
-			new_cpu = prev_cpu;
+	if (sd_flag & SD_BALANCE_WAKE) {
+		if (cpumask_test_cpu(cpu, tsk_cpus_allowed(p)))
+			want_affine = 1;
+		new_cpu = prev_cpu;
 		}
 	} else if(sched_orig_wakeup_load_balance_enable){
 		//only wakeup case goes to legacy load balancer code
-		if (sd_flag & SD_BALANCE_WAKE) {
-			if (cpumask_test_cpu(cpu, tsk_cpus_allowed(p)))
-				want_affine = 1;
-				new_cpu = prev_cpu;
+	if (sd_flag & SD_BALANCE_WAKE) {
+		if (cpumask_test_cpu(cpu, tsk_cpus_allowed(p)))
+			want_affine = 1;
+		new_cpu = prev_cpu;
 		} else if(sched_enable_hmp)
 			return select_best_cpu(p, prev_cpu, 0, sync);
 	} else {
@@ -4866,10 +4866,10 @@ select_task_rq_fair(struct task_struct *p, int sd_flag, int wake_flags)
 		if (sched_enable_hmp)
 			return select_best_cpu(p, prev_cpu, 0, sync);
 
-		if (sd_flag & SD_BALANCE_WAKE) {
-			if (cpumask_test_cpu(cpu, tsk_cpus_allowed(p)))
-				want_affine = 1;
-			new_cpu = prev_cpu;
+	if (sd_flag & SD_BALANCE_WAKE) {
+		if (cpumask_test_cpu(cpu, tsk_cpus_allowed(p)))
+			want_affine = 1;
+		new_cpu = prev_cpu;
 		}
 	}
 
@@ -7033,11 +7033,11 @@ void idle_balance(int this_cpu, struct rq *this_rq)
 		interval = msecs_to_jiffies(sd->balance_interval);
 		if (time_after(next_balance, sd->last_balance + interval))
 			next_balance = sd->last_balance + interval;
-			/*
+                       /*
 			* Stop searching for tasks to pull if there are
 			* now runnable tasks on this rq.
 			*/
- 			if (pulled_task || this_rq->nr_running > 0) {
+                        if (pulled_task || this_rq->nr_running > 0) {
 			balance_rq->idle_stamp = 0;
 			break;
 		}
